@@ -1,0 +1,23 @@
+# Development-only services (not for production). Start with `task db:up`.
+name: homedash
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: homedash
+      POSTGRES_USER: homedash
+      POSTGRES_PASSWORD: homedash
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18+ images keep their data under /var/lib/postgresql/<major>.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homedash -d homedash"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres-data:

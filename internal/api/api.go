@@ -12,11 +12,11 @@ import (
 
 // NewHandler builds the HTTP handler serving the API, its OpenAPI spec (/openapi.json) and docs (/docs).
 // Each API version is mounted under its own /api/vN prefix.
-func NewHandler(version string) http.Handler {
+func NewHandler(deps v1.Dependencies) http.Handler {
 	mux := http.NewServeMux()
-	api := humago.New(mux, huma.DefaultConfig("homedash API", version))
+	api := humago.New(mux, huma.DefaultConfig("homedash API", deps.Version))
 
-	v1.Register(huma.NewGroup(api, "/api/v1"), version)
+	v1.Register(huma.NewGroup(api, "/api/v1"), deps)
 
 	return mux
 }

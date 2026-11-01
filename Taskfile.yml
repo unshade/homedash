@@ -1,9 +1,14 @@
 # Run with: go tool -modfile=tools/go.mod task <name>
 version: "3"
 
+env:
+  # homedash is pure Go: no C toolchain needed, and binaries are static.
+  CGO_ENABLED: "0"
+
 vars:
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+  COMPOSE: docker compose -f .dev/compose.yaml
   LDFLAGS: -X github.com/unshade/homedash/cmd.Version={{.VERSION}}
 
 tasks:
@@ -19,16 +24,42 @@ tasks:
     cmds:
       - go build -ldflags "{{.LDFLAGS}}" -o bin/homedash .
 
+  generate:
+    desc: Run go generate (gomock mocks, ...)
+    cmds:
+      - go generate ./cmd/... ./internal/...
+
   test:
-    desc: Run Go tests
+    desc: Run unit tests (no external dependencies)
     cmds:
       - go test . ./cmd/... ./internal/...
 
+  test:integration:
+    desc: Run unit + integration tests (needs Docker for testcontainers)
+    cmds:
+      - go test -tags integration . ./cmd/... ./internal/...
+
   serve:
-    desc: Build and run the API on localhost:8080
+    desc: Build and run the API on localhost:8080 (run `task db:up` first)
     deps: [build]
     cmds:
       - ./bin/homedash serve {{.CLI_ARGS}}
+
+  db:up:
+    desc: Start the dev PostgreSQL database
+    cmds:
+      - "{{.COMPOSE}} up -d --wait postgres"
+
+  db:down:
+    desc: Stop the dev PostgreSQL database (data is kept)
+    cmds:
+      - "{{.COMPOSE}} down"
+
+  db:reset:
+    desc: Stop the dev PostgreSQL database and delete its data
+    prompt: This deletes all dev data. Continue?
+    cmds:
+      - "{{.COMPOSE}} down --volumes"
 
   cobra:add:
     desc: "Scaffold a new CLI command (e.g. task cobra:add -- groceries, or -- list -p groceriesCmd)"
