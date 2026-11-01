@@ -39,7 +39,11 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer sqlDB.Close()
+		defer func() {
+			if err := sqlDB.Close(); err != nil {
+				slog.Error("close database", "err", err)
+			}
+		}()
 
 		if err := database.Migrate(ctx, db); err != nil {
 			return err

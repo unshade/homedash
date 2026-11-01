@@ -2,6 +2,8 @@ module github.com/unshade/homedash
 
 go 1.27.0
 
+toolchain go1.27.3
+
 require (
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/danielgtaylor/huma/v2 v2.40.0

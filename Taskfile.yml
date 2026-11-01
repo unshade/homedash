@@ -9,6 +9,15 @@ vars:
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo dev
   COMPOSE: docker compose -f .dev/compose.yaml
+  TOOL: go tool -modfile=tools/go.mod
+  # Our Go packages. Not ./...: web/node_modules contains a Go package.
+  PKGS: . ./cmd/... ./internal/...
+  # Packages measured by coverage, whichever package's tests exercise them.
+  COVERPKG: ./cmd/...,./internal/...
+  COVERDIR: "{{.ROOT_DIR}}/.coverage"
+  # Packages that contain *_integration_test.go files.
+  INTEGRATION_PKGS:
+    sh: find cmd internal -name '*_integration_test.go' -exec dirname {} \; | sort -u | sed 's|^|./|' | tr '\n' ' '
   LDFLAGS: -X github.com/unshade/homedash/cmd.Version={{.VERSION}}
 
 tasks:
@@ -29,15 +38,57 @@ tasks:
     cmds:
       - go generate ./cmd/... ./internal/...
 
-  test:
-    desc: Run unit tests (no external dependencies)
+  vet:
+    desc: Run go vet (integration tests included)
     cmds:
-      - go test . ./cmd/... ./internal/...
+      - go vet -tags integration {{.PKGS}}
+
+  lint:
+    desc: Run golangci-lint (config in .golangci.yml)
+    cmds:
+      - "{{.TOOL}} golangci-lint run {{.PKGS}}"
+
+  lint:fix:
+    desc: Run golangci-lint and apply automatic fixes (formatting, imports, ...)
+    cmds:
+      - "{{.TOOL}} golangci-lint run --fix {{.PKGS}}"
+
+  vuln:
+    desc: Check for known vulnerabilities in the code paths we call
+    cmds:
+      - "{{.TOOL}} govulncheck -tags integration {{.PKGS}}"
+
+  check:
+    desc: Run every pre-check (vet, lint, vuln, build)
+    cmds:
+      - task: vet
+      - task: lint
+      - task: vuln
+      - task: build
+
+  test:
+    desc: Run unit tests (no external dependencies), coverage in .coverage/unit
+    cmds:
+      - rm -rf {{.COVERDIR}}/unit && mkdir -p {{.COVERDIR}}/unit
+      - go test -cover -coverpkg={{.COVERPKG}} {{.PKGS}} -args -test.gocoverdir={{.COVERDIR}}/unit
 
   test:integration:
-    desc: Run unit + integration tests (needs Docker for testcontainers)
+    desc: Run integration tests (needs Docker for testcontainers), coverage in .coverage/integration
     cmds:
-      - go test -tags integration . ./cmd/... ./internal/...
+      - rm -rf {{.COVERDIR}}/integration && mkdir -p {{.COVERDIR}}/integration
+      - go test -tags integration -cover -coverpkg={{.COVERPKG}} {{.INTEGRATION_PKGS}} -args -test.gocoverdir={{.COVERDIR}}/integration
+
+  coverage:
+    desc: Merge the unit and integration coverage into .coverage/coverage.out and .coverage/coverage.xml (Cobertura)
+    cmds:
+      - rm -rf {{.COVERDIR}}/merged && mkdir -p {{.COVERDIR}}/merged
+      - |
+        inputs=$(for d in unit integration; do [ -d "{{.COVERDIR}}/$d" ] && printf '%s,' "{{.COVERDIR}}/$d"; done)
+        if [ -z "$inputs" ]; then echo "no coverage data: run task test and/or task test:integration first" >&2; exit 1; fi
+        go tool covdata merge -i="${inputs%,}" -o={{.COVERDIR}}/merged
+      - go tool covdata textfmt -i={{.COVERDIR}}/merged -o={{.COVERDIR}}/coverage.out
+      - "{{.TOOL}} gocover-cobertura -ignore-gen-files -ignore-dirs '/mock$' < {{.COVERDIR}}/coverage.out > {{.COVERDIR}}/coverage.xml"
+      - go tool cover -func={{.COVERDIR}}/coverage.out | tail -1
 
   serve:
     desc: Build and run the API on localhost:8080 (run `task db:up` first)

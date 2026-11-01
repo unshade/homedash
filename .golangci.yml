@@ -1,0 +1,32 @@
+version: "2"
+
+run:
+  # Lint integration tests too.
+  build-tags:
+    - integration
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - errorlint
+    - misspell
+    - testifylint
+    - unconvert
+    - usestdlibvars
+  exclusions:
+    generated: strict
+    paths:
+      - web/
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/unshade/homedash
+  exclusions:
+    generated: strict
+    paths:
+      - web/

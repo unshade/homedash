@@ -9,8 +9,9 @@ import (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the homedash version",
-	Run: func(cmd *cobra.Command, _ []string) {
-		fmt.Fprintln(cmd.OutOrStdout(), Version)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), Version)
+		return err
 	},
 }
 

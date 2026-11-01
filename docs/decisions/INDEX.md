@@ -17,3 +17,4 @@ Decisions are recorded as described in [ADR 1](0001-record-architecture-decision
 | 11 | [Load configuration from prefixed environment variables](0011-load-config-from-prefixed-env-vars.md) | Accepted |
 | 12 | [Model partial updates with OmittableNullable](0012-model-partial-updates-with-omittable-nullable.md) | Accepted |
 | 13 | [Build without cgo](0013-build-without-cgo.md) | Accepted |
+| 14 | [Run CI on GitHub Actions through tasks](0014-run-ci-on-github-actions-through-tasks.md) | Accepted |

@@ -23,6 +23,8 @@ homedash is a self-hostable dashboard for everything at home: groceries, purchas
 | Config | [caarlos0/env](https://github.com/caarlos0/env), generic API |
 | Tests | `testing` + [testify](https://github.com/stretchr/testify) + [gomock](https://github.com/uber-go/mock) + [testcontainers](https://golang.testcontainers.org/) |
 | Tasks | [Task](https://taskfile.dev/) (`Taskfile.yml`). Do not add a Makefile. |
+| Checks | `go vet`, [golangci-lint](https://golangci-lint.run/) v2 (`.golangci.yml`), [govulncheck](https://go.dev/doc/security/vuln/) |
+| CI | GitHub Actions (`.github/workflows/ci.yml`), every step is a task |
 | Frontend | Next.js (React, App Router, TypeScript, Tailwind) in `web/`. Read `web/AGENTS.md` first. |
 
 ## Layout
@@ -38,6 +40,8 @@ internal/api/               router, OpenAPI, attaches each version
 internal/api/field/         request field types shared by every API version
 internal/api/v1/            v1 handlers, served under /api/v1
 tools/                      separate Go module that pins the dev tools
+.github/workflows/ci.yml    CI: pre-checks, unit, integration, merged coverage
+.golangci.yml               golangci-lint configuration
 .dev/                       development-only files (compose.yaml for PostgreSQL)
 docs/decisions/             ADRs + INDEX.md
 web/                        Next.js frontend
@@ -53,8 +57,11 @@ alias task='go tool -modfile=tools/go.mod task'   # optional
 task                       # list tasks
 task db:up                 # start the dev PostgreSQL (.dev/compose.yaml); db:down, db:reset
 task serve                 # build + run the API on :8080 (/docs, /openapi.json)
-task test                  # unit tests
-task test:integration      # unit + integration tests (needs Docker)
+task check                 # pre-checks: vet, lint, vuln, build
+task lint:fix              # golangci-lint with automatic fixes (gofmt, goimports, ...)
+task test                  # unit tests -> .coverage/unit
+task test:integration      # integration tests only (needs Docker) -> .coverage/integration
+task coverage              # merge both into .coverage/coverage.out + coverage.xml (Cobertura)
 task generate              # go generate (mocks)
 task cobra:add -- <name>   # new CLI command (`-- <name> -p <parent>Cmd` for a subcommand)
 task web:dev               # Next.js dev server, /api/* forwarded to :8080
@@ -68,8 +75,18 @@ task web:dev               # Next.js dev server, /api/* forwarded to :8080
 - New project commands go in `Taskfile.yml`.
 - Builds run with `CGO_ENABLED=0` (set in the Taskfile). Don't add dependencies that need cgo.
 - `//go:generate` lines use `$GOFILE` instead of hard-coding the file name, e.g. `//go:generate go tool -modfile=../../tools/go.mod mockgen -source=$GOFILE -destination=mock/<file>.go -package=mock`.
-- Go commands target `. ./cmd/... ./internal/...`, not `./...`: an npm package installs a Go package inside `web/node_modules`.
+- Go commands target `. ./cmd/... ./internal/...` (the `PKGS` variable in the Taskfile), not `./...`: an npm package installs a Go package inside `web/node_modules`.
+- Keep the `toolchain` line of `go.mod` and `tools/go.mod` on the latest Go patch release (`go mod edit -toolchain=goX.Y.Z`). govulncheck fails when the standard library we call has a known vulnerability, and the usual fix is a newer patch release.
+- `task check` must pass before pushing: `go vet`, golangci-lint, govulncheck and the build. Fix lint findings, don't disable them. Run `task lint:fix` for formatting and imports (our own packages are grouped last, after the `github.com/unshade/homedash` prefix).
 - Files that only matter for development (compose files and the like) go in `.dev/`, so self-hosters don't mistake them for deployment files.
+
+### CI
+
+- CI runs on GitHub Actions (`.github/workflows/ci.yml`). **Every step calls a task.** Don't put build or test logic in the workflow YAML; add a task and call it.
+- Jobs: pre-checks (`vet`, `build`, `lint`, `vuln`), unit tests, integration tests, then coverage once both test jobs pass.
+- Unit and integration tests run as separate steps, each writing Go binary coverage (`-test.gocoverdir`). `task coverage` merges them with `go tool covdata` into **a single** `coverage.out`, then converts it to Cobertura for GitHub (job summary + pull request comment).
+- Integration tests need Docker: run them on `ubuntu-latest` (macOS and Windows runners have no Docker). Add every image the tests use to the job's "Pull test images" step.
+- Upload hidden folders such as `.coverage/` with `include-hidden-files: true`, or `actions/upload-artifact` skips them.
 
 ### CLI
 
@@ -105,7 +122,7 @@ task web:dev               # Next.js dev server, /api/* forwarded to :8080
 | Level | Needs | How |
 | --- | --- | --- |
 | Unit | nothing but Go | mocks for dependencies; plain `go test` / `task test` |
-| Integration | several real components (testcontainers PostgreSQL) | files `*_integration_test.go` starting with `//go:build integration`; `task test:integration` |
+| Integration | several real components (testcontainers PostgreSQL) | files `*_integration_test.go` starting with `//go:build integration`; `task test:integration` runs only the packages that have such files |
 | End-to-end | later | — |
 
 - Use only the standard `testing` package plus testify. Assert with `require` when the test can't continue after a failure, `assert` otherwise.
@@ -122,9 +139,11 @@ task web:dev               # Next.js dev server, /api/* forwarded to :8080
 3. `internal/database/<feature>_repository.go`: a private row struct and the GORM generics implementation. Add the struct to `Migrate`. Write `<feature>_repository_integration_test.go`.
 4. `internal/api/v1/<feature>.go`: Huma operations calling the service, with `OmittableNullable` for PATCH. Add it to `Register` and `Dependencies`. Write `<feature>_test.go` with `humatest` and the mock.
 5. Wire the repository and service in `cmd/serve.go`.
-6. Run `task test` and `task test:integration`, and write an ADR if a structural decision was made.
+6. Run `task check`, `task test` and `task test:integration`, and write an ADR if a structural decision was made.
 
 ## Known gotchas
+
+- All Go tools share `tools/go.mod`, so their dependencies must be compatible. actionlint can't be added there, because golangci-lint requires a YAML library version that breaks it. To check a workflow, build actionlint in a temporary folder instead.
 
 - On macOS, an outdated Command Line Tools install can't link anything that uses cgo. That's one reason `CGO_ENABLED=0` is set.
 - Dates returned by PostgreSQL come back in the server's local timezone, not normalized to UTC yet.
