@@ -10,21 +10,38 @@ A self-hostable dashboard for everything at home.
 
 ## Development
 
-Requirements: Go and Node.js. All other dev tools (e.g. [Task](https://taskfile.dev/), [cobra-cli](https://github.com/spf13/cobra-cli)) are pinned in [`tools/go.mod`](tools/go.mod) and run through `go tool`, so nothing else has to be installed.
+Requirements: Go, Node.js and Docker. All other dev tools (e.g. [Task](https://taskfile.dev/), [cobra-cli](https://github.com/spf13/cobra-cli)) are pinned in [`tools/go.mod`](tools/go.mod) and run through `go tool`, so nothing else has to be installed.
 
 ```sh
 alias task='go tool -modfile=tools/go.mod task'   # optional convenience
 
 task            # list tasks
+task db:up      # start the dev PostgreSQL (.dev/compose.yaml)
 task serve      # API on http://localhost:8080 (docs at /docs, spec at /openapi.json)
 task web:dev    # frontend on http://localhost:3000, /api/* proxied to the Go API
-task test
+task test                  # unit tests
+task test:integration      # unit + integration tests (testcontainers, needs Docker)
+task generate              # regenerate gomock mocks
 task cobra:add -- <name>   # scaffold a CLI command in cmd/ (add `-p <parent>Cmd` for subcommands)
 ```
 
-API routes live in versioned packages: `internal/api/v1` is served under `/api/v1`.
+### Configuration
 
-To add a Go dev tool: `cd tools && go get -tool <module>/cmd/<tool>@<version>`.
+homedash is configured with environment variables, loaded by [`internal/config`](internal/config/config.go). Each one starts with `HOMEDASH_` followed by its group prefix. The defaults work with the dev database in `.dev/compose.yaml`.
+
+| Variable | Default |
+| --- | --- |
+| `HOMEDASH_SERVER_ADDR` | `localhost:8080` |
+| `HOMEDASH_DB_HOST` | `localhost` |
+| `HOMEDASH_DB_PORT` | `5432` |
+| `HOMEDASH_DB_USER` | `homedash` |
+| `HOMEDASH_DB_PASSWORD` | `homedash` |
+| `HOMEDASH_DB_NAME` | `homedash` |
+| `HOMEDASH_DB_SSLMODE` | `disable` |
+
+## Contributing
+
+Conventions, architecture and rules are in [`AGENTS.md`](AGENTS.md). The reasons behind them are recorded as ADRs in [`docs/decisions/`](docs/decisions/INDEX.md).
 
 ## License
 
