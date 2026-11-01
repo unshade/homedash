@@ -19,8 +19,10 @@ task            # list tasks
 task db:up      # start the dev PostgreSQL (.dev/compose.yaml)
 task serve      # API on http://localhost:8080 (docs at /docs, spec at /openapi.json)
 task web:dev    # frontend on http://localhost:3000, /api/* proxied to the Go API
+task check                 # vet, lint, vuln, build
 task test                  # unit tests
-task test:integration      # unit + integration tests (testcontainers, needs Docker)
+task test:integration      # integration tests (testcontainers, needs Docker)
+task coverage              # merged coverage (.coverage/coverage.out, Cobertura .coverage/coverage.xml)
 task generate              # regenerate gomock mocks
 task cobra:add -- <name>   # scaffold a CLI command in cmd/ (add `-p <parent>Cmd` for subcommands)
 ```

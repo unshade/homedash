@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Every step runs a task; Task itself is pinned in tools/go.mod.
+  TASK: go tool -modfile=tools/go.mod task
+
+jobs:
+  checks:
+    name: Pre-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod # uses its `toolchain` line
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - name: Vet
+        run: $TASK vet
+      - name: Build
+        run: $TASK build
+      - name: Lint
+        run: $TASK lint
+      - name: Vulnerabilities
+        run: $TASK vuln
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - name: Unit tests
+        run: $TASK test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: .coverage/unit
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  integration:
+    name: Integration tests
+    # testcontainers needs a Docker daemon: GitHub's Ubuntu runners have one
+    # running (macOS and Windows runners don't), and Ryuk, the container that
+    # cleans up after the tests, works there without extra configuration.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - name: Check Docker
+        run: docker info --format 'Docker {{.ServerVersion}} ({{.OperatingSystem}})'
+      - name: Pull test images
+        # Same image as internal/database/main_integration_test.go. Pulling it
+        # first keeps download time out of the container start-up timeout.
+        run: docker pull postgres:18-alpine
+      - name: Integration tests
+        run: $TASK test:integration
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: .coverage/integration
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage:
+    name: Coverage
+    needs: [unit, integration]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # coverage comment on pull requests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+          path: .coverage/unit
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-integration
+          path: .coverage/integration
+      - name: Merge coverage and convert to Cobertura
+        run: $TASK coverage
+      - name: Coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: .coverage/coverage.xml
+          format: markdown
+          output: both
+          badge: true
+      - name: Add summary to the job page
+        run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment coverage on the pull request
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          path: code-coverage-results.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            .coverage/coverage.out
+            .coverage/coverage.xml
+          include-hidden-files: true
