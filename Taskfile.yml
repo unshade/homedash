@@ -1,0 +1,64 @@
+# Run with: go tool -modfile=tools/go.mod task <name>
+version: "3"
+
+vars:
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+  LDFLAGS: -X github.com/unshade/homedash/cmd.Version={{.VERSION}}
+
+tasks:
+  default:
+    cmds:
+      - go tool -modfile=tools/go.mod task --list
+    silent: true
+
+  build:
+    desc: Build the homedash binary into bin/
+    sources: ["*.go", "cmd/**/*.go", "internal/**/*.go", go.mod, go.sum]
+    generates: [bin/homedash]
+    cmds:
+      - go build -ldflags "{{.LDFLAGS}}" -o bin/homedash .
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test . ./cmd/... ./internal/...
+
+  serve:
+    desc: Build and run the API on localhost:8080
+    deps: [build]
+    cmds:
+      - ./bin/homedash serve {{.CLI_ARGS}}
+
+  cobra:add:
+    desc: "Scaffold a new CLI command (e.g. task cobra:add -- groceries, or -- list -p groceriesCmd)"
+    cmds:
+      - go tool -modfile=tools/go.mod cobra-cli add --config .cobra.yaml {{.CLI_ARGS}}
+
+  web:install:
+    desc: Install frontend dependencies
+    dir: web
+    sources: [package.json, package-lock.json]
+    cmds:
+      - npm ci
+
+  web:dev:
+    desc: Run the Next.js dev server (proxies /api to the Go API)
+    dir: web
+    deps: [web:install]
+    cmds:
+      - npm run dev
+
+  web:build:
+    desc: Build the frontend
+    dir: web
+    deps: [web:install]
+    cmds:
+      - npm run build
+
+  web:lint:
+    desc: Lint the frontend
+    dir: web
+    deps: [web:install]
+    cmds:
+      - npm run lint

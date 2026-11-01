@@ -1,0 +1,4 @@
+# Config for `task cobra:add` (cobra-cli). License header is handled by the root LICENSE.
+author: Noé Steiner
+license: none
+useViper: false
