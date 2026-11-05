@@ -27,11 +27,22 @@ tasks:
     silent: true
 
   build:
-    desc: Build the homedash binary into bin/
-    sources: ["*.go", "cmd/**/*.go", "internal/**/*.go", go.mod, go.sum]
+    desc: Build the homedash binary (frontend embedded) into bin/
+    deps: [web:build]
+    sources: ["*.go", "cmd/**/*.go", "internal/**/*.go", "internal/webui/dist/**", go.mod, go.sum]
     generates: [bin/homedash]
     cmds:
       - go build -ldflags "{{.LDFLAGS}}" -o bin/homedash .
+
+  dev:
+    desc: Develop with live reload - database, Go server (air) and Vite dev server on http://localhost:5173
+    cmds:
+      - task: db:up
+      - task: dev:servers
+
+  dev:servers:
+    internal: true
+    deps: [dev:api, web:dev]
 
   dev:api:
     desc: Run the Go server and restart it on every Go change (air, config in .dev/air.toml)
@@ -64,11 +75,15 @@ tasks:
       - "{{.TOOL}} govulncheck -tags integration {{.PKGS}}"
 
   check:
-    desc: Run every pre-check (vet, lint, vuln, build)
+    desc: Run every pre-check (Go vet, lint, vuln; frontend lint, types, audit, API types; build)
     cmds:
       - task: vet
       - task: lint
       - task: vuln
+      - task: web:lint
+      - task: web:typecheck
+      - task: web:audit
+      - task: web:api:check
       - task: build
 
   test:
@@ -123,29 +138,65 @@ tasks:
       - go tool -modfile=tools/go.mod cobra-cli add --config .cobra.yaml {{.CLI_ARGS}}
 
   web:install:
-    desc: Install frontend dependencies
+    desc: Install frontend dependencies (exactly as locked in package-lock.json)
     dir: web
     sources: [package.json, package-lock.json]
     cmds:
       - npm ci
 
   web:dev:
-    desc: Run the Next.js dev server (proxies /api to the Go API)
+    desc: Run the Vite dev server on http://localhost:5173 (proxies /api to the Go server)
     dir: web
     deps: [web:install]
     cmds:
       - npm run dev
 
   web:build:
-    desc: Build the frontend
-    dir: web
+    desc: Build the frontend into internal/webui/dist (embedded in the binary)
     deps: [web:install]
+    sources: ["web/src/**", "web/public/**", web/index.html, "web/*.json", "web/*.ts"]
+    generates: ["internal/webui/dist/index.html"]
     cmds:
-      - npm run build
+      - find internal/webui/dist -mindepth 1 ! -name .gitkeep -delete
+      - npm --prefix web run build
 
   web:lint:
-    desc: Lint the frontend
+    desc: Lint the frontend (oxlint)
     dir: web
     deps: [web:install]
     cmds:
       - npm run lint
+
+  web:typecheck:
+    desc: Type-check the frontend
+    dir: web
+    deps: [web:install]
+    cmds:
+      - npm run typecheck
+
+  web:test:
+    desc: Run the frontend tests (Vitest)
+    dir: web
+    deps: [web:install]
+    cmds:
+      - npm test
+
+  web:audit:
+    desc: Fail on known high or critical vulnerabilities in the frontend's runtime dependencies
+    dir: web
+    cmds:
+      - npm audit --omit=dev --audit-level=high
+
+  web:api:
+    desc: Generate the frontend API types (web/src/api/schema.gen.ts) from the Go OpenAPI document
+    deps: [web:install]
+    cmds:
+      - mkdir -p .dev/tmp
+      - go run . openapi > .dev/tmp/openapi.json
+      - npm --prefix web exec -- openapi-typescript .dev/tmp/openapi.json -o web/src/api/schema.gen.ts
+
+  web:api:check:
+    desc: Fail if the frontend API types are out of date with the Go API
+    cmds:
+      - task: web:api
+      - git diff --exit-code -- web/src/api/schema.gen.ts
