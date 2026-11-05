@@ -122,6 +122,20 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - name: Build the image
+        run: $TASK docker:build
+
   coverage:
     name: Coverage
     needs: [unit, integration]
