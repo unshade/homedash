@@ -85,14 +85,16 @@
     --chart-4: #6b6b6b;
     --chart-5: #d4d4d4;
     --radius: 0.5rem;
-    --sidebar: #f4f3f1;
-    --sidebar-foreground: #0a0a0a;
-    --sidebar-primary: #2f6b4b;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #eeeeee;
-    --sidebar-accent-foreground: #0a0a0a;
-    --sidebar-border: #e6e6e6;
-    --sidebar-ring: #8a8a8a;
+    /* The sidebar is a white panel on the stone ground, built from the tokens
+       above so light and dark follow them. */
+    --sidebar: var(--card);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--muted);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -123,14 +125,6 @@
       --chart-3: oklch(0.439 0 0);
       --chart-4: oklch(0.371 0 0);
       --chart-5: oklch(0.269 0 0);
-      --sidebar: oklch(0.205 0 0);
-      --sidebar-foreground: oklch(0.985 0 0);
-      --sidebar-primary: oklch(0.488 0.243 264.376);
-      --sidebar-primary-foreground: oklch(0.985 0 0);
-      --sidebar-accent: oklch(0.269 0 0);
-      --sidebar-accent-foreground: oklch(0.985 0 0);
-      --sidebar-border: oklch(1 0 0 / 10%);
-      --sidebar-ring: oklch(0.556 0 0);
   }
 }
 
@@ -210,5 +204,12 @@
   }
   ::view-transition-old(.todo-exit) {
     animation: todo-fade-out 150ms ease forwards;
+  }
+  /* The phone menu fades instead of sliding in. */
+  [data-slot="sheet-content"] {
+    --tw-enter-translate-x: 0;
+    --tw-exit-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-y: 0;
   }
 }
