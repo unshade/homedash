@@ -9,15 +9,9 @@ export default {
   branches: ['main'],
   tagFormat: 'v${version}',
   plugins: [
-    [
-      '@semantic-release/commit-analyzer',
-      {
-        preset: 'conventionalcommits',
-        // homedash is still 0.x: a breaking change bumps the minor version
-        // instead of releasing 1.0.0. Remove this rule to go 1.0.
-        releaseRules: [{ breaking: true, release: 'minor' }],
-      },
-    ],
+    // feat → minor, fix and perf → patch, a breaking change (`feat!:` or a
+    // `BREAKING CHANGE:` footer) → major.
+    ['@semantic-release/commit-analyzer', { preset: 'conventionalcommits' }],
     ['@semantic-release/release-notes-generator', { preset: 'conventionalcommits' }],
     ['@semantic-release/changelog', { changelogFile: 'CHANGELOG.md', changelogTitle: '# Changelog' }],
     [

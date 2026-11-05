@@ -113,7 +113,7 @@ task release:dry-run       # on an up-to-date main: the next version and its not
 - **Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)**: `type: subject`, one line, lowercase imperative subject, no final period (`feat: add openapi command`). Types: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `style`, `revert`. A scope is optional (`feat(todos): ...`).
 - The author's rules for commits: **no description (body)** and **no `Co-Authored-By` line**, whatever tool writes the commit. One commit per concern; work for several concerns is split into several commits, each one building and passing its tests.
 - Commits go to a branch and reach main through a pull request (merge commit), never pushed to main directly.
-- Releases are automatic (ADR 20): `feat` releases a minor version, `fix` and `perf` a patch; other types release nothing. While homedash is 0.x, a breaking change (`feat!:`) bumps the minor version too. semantic-release writes `CHANGELOG.md`, tags `vX.Y.Z` and creates the GitHub release; CI then publishes the image. Never tag or edit the changelog by hand.
+- Releases are automatic (ADR 20): `feat` releases a minor version, `fix` and `perf` a patch, a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) a major one; other types release nothing. (The 0.x rule of ADR 20 ended with 1.0.0.) semantic-release writes `CHANGELOG.md`, tags `vX.Y.Z` and creates the GitHub release; CI then publishes the image. Never tag or edit the changelog by hand.
 
 ### Container image
 
