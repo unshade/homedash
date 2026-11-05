@@ -1,0 +1,3 @@
+# Installed by `task release:install` (npm ci); never committed.
+node_modules/
+npm-debug.log*

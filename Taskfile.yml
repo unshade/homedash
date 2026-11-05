@@ -19,6 +19,12 @@ vars:
   INTEGRATION_PKGS:
     sh: find cmd internal -name '*_integration_test.go' -exec dirname {} \; | sort -u | sed 's|^|./|' | tr '\n' ' '
   LDFLAGS: -X github.com/unshade/homedash/cmd.Version={{.VERSION}}
+  # Container image published by CI (ADR 21).
+  IMAGE: ghcr.io/unshade/homedash
+  REVISION:
+    sh: git rev-parse HEAD 2>/dev/null || echo unknown
+  # Release tooling (semantic-release, commitlint), pinned in tools/release (ADR 20).
+  RELEASE: npm --prefix tools/release exec --
 
 tasks:
   default:
@@ -200,3 +206,50 @@ tasks:
     cmds:
       - task: web:api
       - git diff --exit-code -- web/src/api/schema.gen.ts
+
+  release:install:
+    desc: Install the release tooling (exactly as locked in tools/release/package-lock.json)
+    dir: tools/release
+    sources: [package.json, package-lock.json]
+    cmds:
+      - npm ci
+
+  commitlint:
+    desc: Check that the commits since FROM (default origin/main) follow Conventional Commits
+    deps: [release:install]
+    vars:
+      FROM: '{{.FROM | default "origin/main"}}'
+    cmds:
+      - "{{.RELEASE}} commitlint --config tools/release/commitlint.config.mjs --from {{.FROM}} --to HEAD --verbose"
+
+  release:
+    desc: "CI only: version, changelog, tag and GitHub release from the Conventional Commits on main"
+    deps: [release:install]
+    cmds:
+      - "{{.RELEASE}} semantic-release --extends ./tools/release/release.config.mjs"
+
+  release:dry-run:
+    desc: Show the next version and its release notes without releasing (run on an up-to-date main)
+    deps: [release:install]
+    cmds:
+      - "{{.RELEASE}} semantic-release --extends ./tools/release/release.config.mjs --dry-run --no-ci --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator"
+
+  docker:build:
+    desc: Build the container image for this machine as homedash:dev
+    cmds:
+      - docker build --build-arg VERSION={{.VERSION}} --build-arg REVISION={{.REVISION}} -t homedash:dev .
+
+  docker:push:
+    desc: "CI only: build the amd64 + arm64 image and push it as VERSION, MAJOR.MINOR and latest (task docker:push VERSION=1.2.3)"
+    preconditions:
+      - sh: echo "{{.VERSION}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+        msg: "VERSION must be a release version like 1.2.3, got {{.VERSION}}"
+    vars:
+      MINOR:
+        sh: echo "{{.VERSION}}" | cut -d. -f1,2
+    cmds:
+      - >-
+        docker buildx build --platform linux/amd64,linux/arm64
+        --build-arg VERSION={{.VERSION}} --build-arg REVISION={{.REVISION}}
+        -t {{.IMAGE}}:{{.VERSION}} -t {{.IMAGE}}:{{.MINOR}} -t {{.IMAGE}}:latest
+        --push .

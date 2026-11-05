@@ -11,3 +11,18 @@
 # taste-skill: keep the dealt direction, not the screenshots
 /.taste-skill/*
 !/.taste-skill/direction.json
+# npm dependencies, wherever a package.json is (web/, tools/release/)
+node_modules/
+npm-debug.log*
+
+# Go test binaries, profiles and debugger builds
+*.test
+*.prof
+__debug_bin*
+
+# Editors and local agent settings
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.claude/settings.local.json

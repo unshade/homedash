@@ -29,6 +29,8 @@ homedash is a self-hostable dashboard for everything at home: groceries, purchas
 | UI | [shadcn/ui](https://ui.shadcn.com/) (Radix, preset Nova), stone ground + white panels + one brand green (ADR 16, 17). No glass/Glassy UI |
 | PWA | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) (Workbox): manifest, generated icons, a service worker caching the app but never the API (ADR 18); server data saved in IndexedDB for a read-only offline mode (ADR 19) |
 | Frontend tests | Vitest + Testing Library + MSW; lint with oxlint |
+| Releases | [semantic-release](https://semantic-release.gitbook.io/) from Conventional Commits on main: version tag, `CHANGELOG.md`, GitHub release; [commitlint](https://commitlint.js.org/) on pull requests (ADR 20) |
+| Container | Multi-stage `Dockerfile` → distroless, non-root image with only the binary, `ghcr.io/unshade/homedash` for amd64 + arm64 (ADR 21) |
 | Dev reload | [air](https://github.com/air-verse/air) for Go (`.dev/air.toml`), Vite for the frontend |
 
 ## Layout
@@ -46,6 +48,9 @@ internal/api/v1/            v1 handlers, served under /api/v1
 internal/server/            the whole HTTP handler: API + frontend + security headers
 internal/webui/             serves the embedded frontend (dist/ is the build output, gitignored)
 tools/                      separate Go module that pins the dev tools
+tools/release/              release tooling (semantic-release, commitlint) pinned in its own package-lock.json
+Dockerfile, .dockerignore   the container image (ADR 21)
+CHANGELOG.md                written by semantic-release on each release; never edit it by hand
 .github/workflows/ci.yml    CI: pre-checks, unit, integration, merged coverage
 .golangci.yml               golangci-lint configuration
 .dev/                       development-only files (compose.yaml for PostgreSQL, air.toml)
@@ -83,6 +88,9 @@ task generate              # go generate (mocks)
 task cobra:add -- <name>   # new CLI command (`-- <name> -p <parent>Cmd` for a subcommand)
 task web:api               # regenerate the frontend API types after changing the Go API
 task web:test              # frontend tests (Vitest); also web:lint, web:typecheck, web:audit
+task docker:build          # container image for this machine -> homedash:dev
+task commitlint            # check commit messages since origin/main (FROM=<ref> to change)
+task release:dry-run       # on an up-to-date main: the next version and its notes, without releasing
 ```
 
 ## Rules
@@ -99,10 +107,26 @@ task web:test              # frontend tests (Vitest); also web:lint, web:typeche
 - Files that only matter for development (compose files, the air config and the like) go in `.dev/`, so self-hosters don't mistake them for deployment files.
 - Develop with `task dev`: air restarts the Go server on every Go change, and Vite reloads the frontend.
 
+### Commits and releases
+
+- **Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)**: `type: subject`, one line, lowercase imperative subject, no final period (`feat: add openapi command`). Types: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `style`, `revert`. A scope is optional (`feat(todos): ...`).
+- The author's rules for commits: **no description (body)** and **no `Co-Authored-By` line**, whatever tool writes the commit. One commit per concern; work for several concerns is split into several commits, each one building and passing its tests.
+- Commits go to a branch and reach main through a pull request (merge commit), never pushed to main directly.
+- Releases are automatic (ADR 20): `feat` releases a minor version, `fix` and `perf` a patch; other types release nothing. While homedash is 0.x, a breaking change (`feat!:`) bumps the minor version too. semantic-release writes `CHANGELOG.md`, tags `vX.Y.Z` and creates the GitHub release; CI then publishes the image. Never tag or edit the changelog by hand.
+
+### Container image
+
+- The `Dockerfile` has build stages (Node for the frontend, Go for the binary) and a runtime stage `gcr.io/distroless/static-debian13:nonroot` that holds **only the binary**. Don't add a shell, tools or other files to it, and keep `USER nonroot`.
+- Build stages use `--platform=$BUILDPLATFORM` and cross-compile with `GOOS`/`GOARCH`: never run emulated steps.
+- Base images are pinned by tag and digest. Update them with the Go toolchain (`go.mod`) and Node (`web/.nvmrc`): `docker buildx imagetools inspect <image:tag>` gives the digest.
+- `.dockerignore` is an allowlist: a new top-level source folder needed by the build must be added to it.
+- Configuration comes from `HOMEDASH_*` environment variables only; the image sets `HOMEDASH_SERVER_ADDR=:8080`.
+
 ### CI
 
 - CI runs on GitHub Actions (`.github/workflows/ci.yml`). **Every step calls a task.** Don't put build or test logic in the workflow YAML; add a task and call it.
-- Jobs: pre-checks (`vet`, `build` with the frontend embedded, `lint`, `vuln`), frontend (`web:lint`, `web:typecheck`, `web:api:check`, `web:test`, `web:audit`), Go unit tests, integration tests, then coverage once both Go test jobs pass. Node's version comes from `web/.nvmrc`.
+- Jobs: commit messages (pull requests only, `commitlint`), pre-checks (`vet`, `build` with the frontend embedded, `lint`, `vuln`), frontend (`web:lint`, `web:typecheck`, `web:api:check`, `web:test`, `web:audit`), Go unit tests, integration tests, container image (`docker:build`), then coverage once both Go test jobs pass. On main, once every check passed: `release` (semantic-release), then `publish` (`docker:push`, amd64 + arm64 to ghcr.io) when a version was released. Node's version comes from `web/.nvmrc`.
+- Runs on main are never cancelled by a newer push (they may be releasing); pull request runs are.
 - Unit and integration tests run as separate steps, each writing Go binary coverage (`-test.gocoverdir`). `task coverage` merges them with `go tool covdata` into **a single** `coverage.out`, then converts it to Cobertura for GitHub (job summary + pull request comment).
 - Integration tests need Docker: run them on `ubuntu-latest` (macOS and Windows runners have no Docker). Add every image the tests use to the job's "Pull test images" step.
 - Upload hidden folders such as `.coverage/` with `include-hidden-files: true`, or `actions/upload-artifact` skips them.
