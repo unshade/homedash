@@ -19,9 +19,10 @@ Decisions are recorded as described in [ADR 1](0001-record-architecture-decision
 | 13 | [Build without cgo](0013-build-without-cgo.md) | Accepted |
 | 14 | [Run CI on GitHub Actions through tasks](0014-run-ci-on-github-actions-through-tasks.md) | Accepted |
 | 15 | [Serve a Vite single-page app from the Go binary](0015-serve-a-vite-spa-from-the-go-binary.md) | Accepted |
-| 16 | [Build the UI with shadcn/ui and the "achromatic ledger" style](0016-build-the-ui-with-shadcn-and-a-ledger-style.md) | Accepted, amended by 17 |
-| 17 | [Give homedash a brand colour and purposeful motion](0017-give-homedash-a-brand-colour-and-purposeful-motion.md) | Accepted |
+| 16 | [Build the UI with shadcn/ui and the "achromatic ledger" style](0016-build-the-ui-with-shadcn-and-a-ledger-style.md) | Superseded by 22 |
+| 17 | [Give homedash a brand colour and purposeful motion](0017-give-homedash-a-brand-colour-and-purposeful-motion.md) | Superseded by 22 |
 | 18 | [Make homedash an installable PWA](0018-make-homedash-an-installable-pwa.md) | Accepted, amended by 19 |
 | 19 | [Keep a read-only copy of the data for offline use](0019-keep-a-read-only-copy-of-the-data-offline.md) | Accepted |
 | 20 | [Release from Conventional Commits with semantic-release](0020-release-from-conventional-commits-with-semantic-release.md) | Accepted |
 | 21 | [Ship a distroless container image](0021-ship-a-distroless-container-image.md) | Accepted |
+| 22 | [Restyle homedash as a calm glass dashboard](0022-restyle-homedash-as-a-calm-glass-dashboard.md) | Accepted |

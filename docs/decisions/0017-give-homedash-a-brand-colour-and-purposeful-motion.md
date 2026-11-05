@@ -4,7 +4,7 @@ Date: 2026-11-01
 
 ## Status
 
-Accepted. Amends the colour rules of [ADR 16](0016-build-the-ui-with-shadcn-and-a-ledger-style.md).
+Superseded by [ADR 22](0022-restyle-homedash-as-a-calm-glass-dashboard.md). Amended the colour rules of [ADR 16](0016-build-the-ui-with-shadcn-and-a-ledger-style.md).
 
 ## Context
 
