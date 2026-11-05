@@ -1,8 +1,12 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-// Todos is the only feature for now, so the home page opens it.
+import { HomePage, HomePageError, HomePageSkeleton } from '@/features/home/home-page'
+import { todosQuery } from '@/features/todos/queries'
+
+// The overview: built from every feature's data (todos for now).
 export const Route = createFileRoute('/')({
-  beforeLoad: () => {
-    throw redirect({ to: '/todos' })
-  },
+  loader: ({ context }) => context.queryClient.ensureQueryData(todosQuery),
+  component: HomePage,
+  pendingComponent: HomePageSkeleton,
+  errorComponent: HomePageError,
 })

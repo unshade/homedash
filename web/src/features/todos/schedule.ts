@@ -116,3 +116,42 @@ export function weekProgress(todos: Todo[], now: Date): WeekProgress {
   }
   return { total, done }
 }
+
+export type WeekDay = {
+  /** Midnight of the day. */
+  date: Date
+  /** "Mon", "Tue"… in the app's locale. */
+  label: string
+  /** Todos due that day, done or not, and how many of them are done. */
+  due: number
+  done: number
+  today: boolean
+}
+
+/** This week (Monday to Sunday) day by day: how many todos are due each day, and how many are done. */
+export function weekDays(todos: Todo[], now: Date): WeekDay[] {
+  const daysSinceMonday = (now.getDay() + 6) % 7
+  const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday + i)
+    return { date, label: weekday.format(date), due: 0, done: 0, today: i === daysSinceMonday }
+  })
+  for (const todo of todos) {
+    if (!todo.dueAt) continue
+    const day = days[daysUntil(todo.dueAt, now) + daysSinceMonday]
+    if (!day) continue
+    day.due++
+    if (todo.done) day.done++
+  }
+  return days
+}
+
+/** The next open todos to deal with: overdue and dated first, soonest first, then undated ones. */
+export function upNext(todos: Todo[], limit: number): Todo[] {
+  return todos
+    .filter((todo) => !todo.done)
+    .toSorted((a, b) => {
+      if (Boolean(a.dueAt) !== Boolean(b.dueAt)) return a.dueAt ? -1 : 1
+      return bySoonest(a, b)
+    })
+    .slice(0, limit)
+}

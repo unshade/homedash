@@ -1,5 +1,5 @@
 import { Link, useMatchRoute } from '@tanstack/react-router'
-import { ListChecksIcon, MenuIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, XIcon } from 'lucide-react'
+import { LayoutDashboardIcon, ListChecksIcon, MenuIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, XIcon } from 'lucide-react'
 
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,11 @@ import {
 } from '@/components/ui/sidebar'
 
 /** The apps of homedash, in the order they appear in the sidebar. Add each new feature here. */
-const apps = [{ to: '/todos', label: 'Todos', icon: ListChecksIcon, fuzzy: true }] as const
+const apps = [
+  // The overview is current only on "/" itself; every other app also owns its sub-pages.
+  { to: '/', label: 'Home', icon: LayoutDashboardIcon, fuzzy: false },
+  { to: '/todos', label: 'Todos', icon: ListChecksIcon, fuzzy: true },
+] as const
 
 /**
  * The app selector. On a computer it is a sidebar that collapses to a rail of

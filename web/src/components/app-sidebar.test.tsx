@@ -48,6 +48,7 @@ describe('AppSidebar', () => {
     await renderSidebar()
 
     expect(screen.getByRole('link', { name: 'Todos' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current')
     expect(screen.getByRole('link', { name: 'homedash' })).not.toHaveAttribute('aria-current')
   })
 
