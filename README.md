@@ -6,7 +6,13 @@ A self-hostable dashboard for everything at home.
 
 - **Backend**: Go + [Huma](https://huma.rocks/) (OpenAPI 3.1 generated from code)
 - **CLI**: [Cobra](https://cobra.dev/)
-- **Frontend**: Next.js (React) in [`web/`](web)
+- **Frontend**: React + Vite + [shadcn/ui](https://ui.shadcn.com/) in [`web/`](web), embedded in the Go binary
+
+## Install it as an app
+
+homedash is a Progressive Web App: open it in a browser and choose **Install app** (Chrome, Edge, Android) or **Share → Add to Home Screen** (Safari on iPhone and iPad). It then opens in its own window. When it can't reach your server (no connection, away from home, server down), it shows the last data it saw on that device, read-only, and says when that data was saved.
+
+Browsers only install apps served over **HTTPS** (or from `localhost`). To install homedash on your phone, put it behind a reverse proxy with a certificate, such as [Caddy](https://caddyserver.com/), or reach it through [Tailscale](https://tailscale.com/kb/1312/serve) (`tailscale serve`).
 
 ## Development
 
@@ -16,9 +22,9 @@ Requirements: Go, Node.js and Docker. All other dev tools (e.g. [Task](https://t
 alias task='go tool -modfile=tools/go.mod task'   # optional convenience
 
 task            # list tasks
-task db:up      # start the dev PostgreSQL (.dev/compose.yaml)
-task serve      # API on http://localhost:8080 (docs at /docs, spec at /openapi.json)
-task web:dev    # frontend on http://localhost:3000, /api/* proxied to the Go API
+task dev        # database + live-reloading Go server + frontend on http://localhost:5173
+task build      # single binary with the frontend embedded -> bin/homedash
+task serve      # run it: app on http://localhost:8080, API docs at /docs
 task check                 # vet, lint, vuln, build
 task test                  # unit tests
 task test:integration      # integration tests (testcontainers, needs Docker)
