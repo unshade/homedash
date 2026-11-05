@@ -232,7 +232,7 @@ tasks:
     desc: Show the next version and its release notes without releasing (run on an up-to-date main)
     deps: [release:install]
     cmds:
-      - "{{.RELEASE}} semantic-release --extends ./tools/release/release.config.mjs --dry-run --no-ci --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator"
+      - "{{.RELEASE}} semantic-release --extends ./tools/release/dry-run.config.mjs --dry-run --no-ci"
 
   docker:build:
     desc: Build the container image for this machine as homedash:dev
