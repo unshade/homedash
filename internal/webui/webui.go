@@ -26,6 +26,9 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"img-src 'self' data:; " +
 	"font-src 'self' data:; " +
 	"connect-src 'self'; " +
+	// The service worker and web app manifest that make the app installable.
+	"worker-src 'self'; " +
+	"manifest-src 'self'; " +
 	"object-src 'none'; " +
 	"base-uri 'self'; " +
 	"form-action 'self'; " +
@@ -78,6 +81,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		if strings.HasPrefix(name, "assets/") {
 			// Vite puts a content hash in every asset name, so they never change.
+			// Everything else, the service worker (sw.js) above all, must be
+			// revalidated, or browsers would keep running an old version.
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		} else {
 			w.Header().Set("Cache-Control", "no-cache")
@@ -114,10 +119,18 @@ var compressible = map[string]bool{
 	".html": true, ".js": true, ".css": true, ".svg": true, ".json": true, ".txt": true, ".webmanifest": true,
 }
 
+// contentTypes covers the extensions Go's mime package doesn't know.
+var contentTypes = map[string]string{
+	".webmanifest": "application/manifest+json",
+}
+
 // serve writes content with the Content-Type of name, gzipped when the file is
 // compressible and the client accepts it. Embedded files have no modification
 // time, so no Last-Modified header is sent.
 func (h *handler) serve(w http.ResponseWriter, r *http.Request, name string, content []byte) {
+	if contentType, ok := contentTypes[path.Ext(name)]; ok {
+		w.Header().Set("Content-Type", contentType)
+	}
 	if compressible[path.Ext(name)] && len(content) >= minGzipSize {
 		w.Header().Add("Vary", "Accept-Encoding")
 		if acceptsGzip(r) {

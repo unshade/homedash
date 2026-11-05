@@ -3,10 +3,12 @@ import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router
 
 import { AppSidebar, OpenMenuButton } from '@/components/app-sidebar'
 import { Logo } from '@/components/logo'
+import { OfflineNotice } from '@/components/offline-notice'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { UpdatePrompt } from '@/components/update-prompt'
 
 export type RouterContext = {
   queryClient: QueryClient
@@ -38,10 +40,12 @@ function RootLayout() {
             </Link>
           </header>
           <main id="main" className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+            <OfflineNotice />
             <Outlet />
           </main>
         </SidebarInset>
         <Toaster />
+        <UpdatePrompt />
       </SidebarProvider>
     </TooltipProvider>
   )

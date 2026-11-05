@@ -137,7 +137,18 @@
     }
   html {
     @apply font-sans;
+    /* Feel like an app on phones, installed or not: no grey flash on tap, no
+       font inflation in landscape. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
     }
+  /* Taps fire at once (no double-tap-zoom wait) and a long press on a control
+     doesn't select its label. Text stays selectable everywhere else. */
+  button, a, [role="button"], [role="menuitem"], [role="checkbox"] {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 /* ----------------------------------------------------------------------------
    Motion (ADR 17). Purposeful and short: feedback on a check, a todo moving to

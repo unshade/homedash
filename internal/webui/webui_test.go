@@ -16,10 +16,12 @@ import (
 var bigScript = strings.Repeat("console.log('homedash');\n", 200)
 
 var app = fstest.MapFS{
-	"index.html":         {Data: []byte("<!doctype html><title>homedash</title>")},
-	"assets/big-3c4d.js": {Data: []byte(bigScript)},
-	"favicon.svg":        {Data: []byte("<svg></svg>")},
-	"assets/app-1a2b.js": {Data: []byte("console.log(1)")},
+	"index.html":           {Data: []byte("<!doctype html><title>homedash</title>")},
+	"assets/big-3c4d.js":   {Data: []byte(bigScript)},
+	"favicon.svg":          {Data: []byte("<svg></svg>")},
+	"assets/app-1a2b.js":   {Data: []byte("console.log(1)")},
+	"sw.js":                {Data: []byte("self.skipWaiting()")},
+	"manifest.webmanifest": {Data: []byte(`{"name":"homedash"}`)},
 }
 
 func request(h http.Handler, method, target string, headers ...string) *httptest.ResponseRecorder {
@@ -64,6 +66,21 @@ func TestNewHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "no-cache", rec.Header().Get("Cache-Control"))
+	})
+
+	t.Run("serves the service worker without caching it", func(t *testing.T) {
+		rec := request(h, http.MethodGet, "/sw.js")
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "no-cache", rec.Header().Get("Cache-Control"))
+		assert.Contains(t, rec.Header().Get("Content-Type"), "javascript")
+	})
+
+	t.Run("serves the web app manifest with its media type", func(t *testing.T) {
+		rec := request(h, http.MethodGet, "/manifest.webmanifest")
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "application/manifest+json", rec.Header().Get("Content-Type"))
 	})
 
 	t.Run("returns 404 for a missing file", func(t *testing.T) {
