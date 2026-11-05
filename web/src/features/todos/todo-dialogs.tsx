@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/spinner'
+import { useOnline } from '@/hooks/use-online'
 
 import { toApiDate, toInputDate } from './due-date'
 import { useCreateTodo, useDeleteTodo, useUpdateTodo } from './queries'
@@ -49,6 +50,8 @@ function SubmitButton({ form, pending, children }: { form: string; pending: bool
 export function CreateTodoDialog() {
   const [open, setOpen] = useState(false)
   const create = useCreateTodo()
+  // Offline, homedash is read-only.
+  const online = useOnline()
 
   const save = (values: TodoFormValues) =>
     create.mutateAsync(
@@ -70,7 +73,7 @@ export function CreateTodoDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled={!online}>
           <PlusIcon data-icon="inline-start" />
           New todo
         </Button>

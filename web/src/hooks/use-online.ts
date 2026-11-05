@@ -1,17 +1,13 @@
+import { onlineManager } from '@tanstack/react-query'
 import { useSyncExternalStore } from 'react'
 
-function subscribe(onChange: () => void) {
-  window.addEventListener('online', onChange)
-  window.addEventListener('offline', onChange)
-  return () => {
-    window.removeEventListener('online', onChange)
-    window.removeEventListener('offline', onChange)
-  }
-}
+const subscribe = (onChange: () => void) => onlineManager.subscribe(onChange)
+const isOnline = () => onlineManager.isOnline()
 
-const isOnline = () => navigator.onLine
-
-/** Whether the browser has a network connection, kept up to date. */
+/**
+ * Whether homedash can reach its server (see src/lib/connection.ts). While it
+ * can't, the app is read-only.
+ */
 export function useOnline() {
   return useSyncExternalStore(subscribe, isOnline)
 }

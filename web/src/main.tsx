@@ -3,6 +3,8 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { checkServer } from '@/lib/connection'
+import { persistQueries } from '@/lib/persist'
 import { queryClient } from '@/lib/query-client'
 
 import { routeTree } from './routeTree.gen'
@@ -26,10 +28,16 @@ declare module '@tanstack/react-router' {
 const root = document.getElementById('root')
 if (!root) throw new Error('index.html has no #root element')
 
-createRoot(root).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </StrictMode>,
-)
+void checkServer()
+
+// Render once the data saved on this device is back (a few milliseconds), so
+// pages show it at once, offline too.
+void persistQueries(queryClient).then(() => {
+  createRoot(root).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>,
+  )
+})

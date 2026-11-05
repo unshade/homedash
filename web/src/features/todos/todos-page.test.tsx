@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { onlineManager } from '@tanstack/react-query'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Todo } from '@/api/client'
 import { renderWithProviders } from '@/test/render'
@@ -253,5 +254,23 @@ describe('TodosPage', () => {
 
     expect(await screen.findByText('internal error')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Buy milk' })).not.toBeChecked()
+  })
+})
+
+describe('TodosPage offline', () => {
+  afterEach(() => onlineManager.setOnline(true))
+
+  it('keeps showing the todos but allows no change', async () => {
+    fakeApi([todo({ title: 'Buy milk' })])
+    const { user } = renderWithProviders(<TodosPage />)
+    await screen.findByText('Buy milk')
+
+    act(() => onlineManager.setOnline(false))
+
+    expect(screen.getByRole('button', { name: 'New todo' })).toBeDisabled()
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Actions for “Buy milk”' }))
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toHaveAttribute('aria-disabled', 'true')
   })
 })

@@ -1,4 +1,6 @@
 /// <reference types="vitest/config" />
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
@@ -6,7 +8,14 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Saved server data is thrown away when the API's shape changes (src/lib/persist.ts).
+const apiSchemaHash = createHash('sha256')
+  .update(readFileSync(new URL('./src/api/schema.gen.ts', import.meta.url)))
+  .digest('hex')
+  .slice(0, 12)
+
 export default defineConfig({
+  define: { 'import.meta.env.API_SCHEMA_HASH': JSON.stringify(apiSchemaHash) },
   plugins: [
     // Must come before react(): generates src/routeTree.gen.ts and code-splits each route.
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),

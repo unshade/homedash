@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useOnline } from '@/hooks/use-online'
 import { cn } from '@/lib/utils'
 
 import { useUpdateTodo } from './queries'
@@ -36,6 +37,8 @@ function DueDate({ todo, done, now }: { todo: Todo; done: boolean; now: Date }) 
 
 export function TodoItem({ todo, now }: { todo: Todo; now: Date }) {
   const update = useUpdateTodo()
+  // Offline, homedash is read-only.
+  const online = useOnline()
   const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null)
 
   // Show the new state right away while the change is being saved.
@@ -53,7 +56,7 @@ export function TodoItem({ todo, now }: { todo: Todo; now: Date }) {
         id={checkboxId}
         className="mt-0.5"
         checked={done}
-        disabled={update.isPending}
+        disabled={update.isPending || !online}
         onCheckedChange={(checked) =>
           update.mutate({ params: { path: { id: todo.id } }, body: { done: checked === true } })
         }
@@ -78,11 +81,11 @@ export function TodoItem({ todo, now }: { todo: Todo; now: Date }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setDialog('edit')}>
+          <DropdownMenuItem disabled={!online} onSelect={() => setDialog('edit')}>
             <PencilIcon />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
+          <DropdownMenuItem variant="destructive" disabled={!online} onSelect={() => setDialog('delete')}>
             <Trash2Icon />
             Delete
           </DropdownMenuItem>

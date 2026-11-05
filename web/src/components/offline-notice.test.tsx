@@ -1,31 +1,33 @@
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import { act, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { OfflineNotice } from '@/components/offline-notice'
 
-function goOffline(offline: boolean) {
-  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(!offline)
-  act(() => {
-    window.dispatchEvent(new Event(offline ? 'offline' : 'online'))
-  })
+function renderNotice() {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <OfflineNotice />
+    </QueryClientProvider>,
+  )
 }
 
 describe('OfflineNotice', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => onlineManager.setOnline(true))
 
-  it('shows nothing while online', () => {
-    render(<OfflineNotice />)
+  it('shows nothing while the server can be reached', () => {
+    renderNotice()
 
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 
-  it('tells the user when the connection is lost, and hides once it is back', () => {
-    render(<OfflineNotice />)
+  it('says homedash is read-only while offline, and hides once back', () => {
+    renderNotice()
 
-    goOffline(true)
-    expect(screen.getByRole('status')).toHaveTextContent('You are offline.')
+    act(() => onlineManager.setOnline(false))
+    expect(screen.getByRole('status')).toHaveTextContent('Offline: read-only')
 
-    goOffline(false)
+    act(() => onlineManager.setOnline(true))
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 })
