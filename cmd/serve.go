@@ -11,17 +11,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/unshade/homedash/internal/api"
 	v1 "github.com/unshade/homedash/internal/api/v1"
 	"github.com/unshade/homedash/internal/config"
 	"github.com/unshade/homedash/internal/database"
+	"github.com/unshade/homedash/internal/server"
 	"github.com/unshade/homedash/internal/todo"
+	"github.com/unshade/homedash/internal/webui"
 )
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Start the homedash HTTP API",
-	Long:  "Start the homedash HTTP API. It is configured through HOMEDASH_* environment variables (see internal/config).",
+	Short: "Start the homedash server (API and web interface)",
+	Long:  "Start the homedash server: the HTTP API and the embedded web interface. It is configured through HOMEDASH_* environment variables (see internal/config).",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
@@ -51,16 +52,19 @@ var serveCmd = &cobra.Command{
 
 		srv := &http.Server{
 			Addr: cfg.Server.Addr,
-			Handler: api.NewHandler(v1.Dependencies{
+			Handler: server.New(v1.Dependencies{
 				Version: Version,
 				Todos:   todo.NewService(database.NewTodoRepository(db)),
-			}),
+			}, webui.Handler()),
 			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       30 * time.Second,
+			WriteTimeout:      30 * time.Second,
+			IdleTimeout:       2 * time.Minute,
 		}
 
 		errCh := make(chan error, 1)
 		go func() {
-			slog.Info("homedash listening", "addr", cfg.Server.Addr, "docs", "http://"+cfg.Server.Addr+"/docs")
+			slog.Info("homedash listening", "url", "http://"+cfg.Server.Addr, "docs", "http://"+cfg.Server.Addr+"/docs")
 			errCh <- srv.ListenAndServe()
 		}()
 

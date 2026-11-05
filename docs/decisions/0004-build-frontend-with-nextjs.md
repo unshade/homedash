@@ -4,7 +4,7 @@ Date: 2026-11-01
 
 ## Status
 
-Accepted
+Superseded by [ADR 15](0015-serve-a-vite-spa-from-the-go-binary.md)
 
 ## Context
 

@@ -28,14 +28,48 @@ jobs:
           cache-dependency-path: |
             go.sum
             tools/go.sum
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - name: Vet
         run: $TASK vet
-      - name: Build
+      - name: Build (frontend embedded)
         run: $TASK build
       - name: Lint
         run: $TASK lint
       - name: Vulnerabilities
         run: $TASK vuln
+
+  web:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6 # web:api:check runs the Go OpenAPI command
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: $TASK web:install
+      - name: Lint
+        run: $TASK web:lint
+      - name: Types
+        run: $TASK web:typecheck
+      - name: API types up to date
+        run: $TASK web:api:check
+      - name: Tests
+        run: $TASK web:test
+      - name: Vulnerabilities
+        run: $TASK web:audit
 
   unit:
     name: Unit tests

@@ -4,3 +4,10 @@
 .DS_Store
 /.task/
 /.coverage/
+/.dev/tmp/
+# Frontend build output, embedded by internal/webui. Keep the placeholder so Go compiles without it.
+/internal/webui/dist/*
+!/internal/webui/dist/.gitkeep
+# taste-skill: keep the dealt direction, not the screenshots
+/.taste-skill/*
+!/.taste-skill/direction.json
