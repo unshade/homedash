@@ -8,6 +8,18 @@ A self-hostable dashboard for everything at home.
 - **CLI**: [Cobra](https://cobra.dev/)
 - **Frontend**: React + Vite + [shadcn/ui](https://ui.shadcn.com/) in [`web/`](web), embedded in the Go binary
 
+## Run it with Docker
+
+Each release is published as a container image for amd64 and arm64 (Raspberry Pi): a distroless image that holds only the homedash binary and runs as a non-root user.
+
+```sh
+docker run -d --name homedash -p 8080:8080 \
+  -e HOMEDASH_DB_HOST=<postgres host> -e HOMEDASH_DB_PASSWORD=<password> \
+  ghcr.io/unshade/homedash:latest
+```
+
+It needs a PostgreSQL database (see [Configuration](#configuration)). Use a version tag such as `0.1` instead of `latest` to choose when to upgrade; the changes of each version are in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Install it as an app
 
 homedash is a Progressive Web App: open it in a browser and choose **Install app** (Chrome, Edge, Android) or **Share → Add to Home Screen** (Safari on iPhone and iPad). It then opens in its own window. When it can't reach your server (no connection, away from home, server down), it shows the last data it saw on that device, read-only, and says when that data was saved.
@@ -26,6 +38,7 @@ task dev        # database + live-reloading Go server + frontend on http://local
 task build      # single binary with the frontend embedded -> bin/homedash
 task serve      # run it: app on http://localhost:8080, API docs at /docs
 task check                 # vet, lint, vuln, build
+task docker:build          # container image -> homedash:dev
 task test                  # unit tests
 task test:integration      # integration tests (testcontainers, needs Docker)
 task coverage              # merged coverage (.coverage/coverage.out, Cobertura .coverage/coverage.xml)
@@ -49,7 +62,7 @@ homedash is configured with environment variables, loaded by [`internal/config`]
 
 ## Contributing
 
-Conventions, architecture and rules are in [`AGENTS.md`](AGENTS.md). The reasons behind them are recorded as ADRs in [`docs/decisions/`](docs/decisions/INDEX.md).
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat: ...`, `fix: ...`): releases, version tags and the changelog are generated from them. Conventions, architecture and rules are in [`AGENTS.md`](AGENTS.md). The reasons behind them are recorded as ADRs in [`docs/decisions/`](docs/decisions/INDEX.md).
 
 ## License
 
