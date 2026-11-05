@@ -51,7 +51,7 @@ export function TodoItem({ todo, now }: { todo: Todo; now: Date }) {
   }
 
   return (
-    <li className="flex items-start gap-3 py-3 pr-2 pl-4">
+    <li className="flex items-start gap-3 py-3 pr-3 pl-5 transition-colors hover:bg-white/40">
       <Checkbox
         id={checkboxId}
         className="mt-0.5"

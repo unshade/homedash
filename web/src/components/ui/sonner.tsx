@@ -4,8 +4,8 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      // Follows the system theme, like the rest of the app (see index.css).
-      theme="system"
+      // homedash is light only (ADR 22).
+      theme="light"
       className="toaster group"
       icons={{
         success: (
@@ -34,7 +34,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast backdrop-blur-xl",
         },
       }}
       {...props}

@@ -44,7 +44,7 @@ export function OfflineNotice() {
   return (
     <output className="block">
       {online ? null : (
-        <span className="mb-6 flex items-start gap-3 rounded-lg border bg-card px-4 py-3 text-sm">
+        <span className="glass mb-6 flex items-start gap-3 rounded-3xl px-5 py-3.5 text-sm">
           <WifiOffIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span>
             <span className="block font-medium">Offline: read-only</span>

@@ -48,6 +48,7 @@ describe('AppSidebar', () => {
     await renderSidebar()
 
     expect(screen.getByRole('link', { name: 'Todos' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'homedash' })).not.toHaveAttribute('aria-current')
   })
 
   it('collapses to icons and remembers it', async () => {

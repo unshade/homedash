@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
 import { AppSidebar, OpenMenuButton } from '@/components/app-sidebar'
+import { Backdrop } from '@/components/backdrop'
 import { Logo } from '@/components/logo'
 import { OfflineNotice } from '@/components/offline-notice'
 import { Button } from '@/components/ui/button'
@@ -29,17 +30,18 @@ function RootLayout() {
         >
           Skip to content
         </a>
+        <Backdrop />
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="bg-transparent">
           {/* Phones only: the sidebar becomes a drawer opened from here. */}
-          <header className="flex h-14 items-center gap-1 border-b px-1 md:hidden">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-1 border-b bg-background/60 px-1 backdrop-blur-xl md:hidden">
             <OpenMenuButton />
             <Link to="/" className="flex items-center gap-2 px-2 text-sm font-semibold">
-              <Logo className="size-5 text-primary" />
+              <Logo className="size-5" />
               homedash
             </Link>
           </header>
-          <main id="main" className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+          <main id="main" className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
             <OfflineNotice />
             <Outlet />
           </main>

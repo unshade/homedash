@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar'
 
 /** The apps of homedash, in the order they appear in the sidebar. Add each new feature here. */
-const apps = [{ to: '/todos', label: 'Todos', icon: ListChecksIcon }] as const
+const apps = [{ to: '/todos', label: 'Todos', icon: ListChecksIcon, fuzzy: true }] as const
 
 /**
  * The app selector. On a computer it is a sidebar that collapses to a rail of
@@ -32,13 +32,13 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="homedash" className="font-semibold">
               <Link to="/" onClick={closeOnPhone}>
-                <Logo className="size-5! text-primary" />
+                <Logo className="size-5!" />
                 <span>homedash</span>
               </Link>
             </SidebarMenuButton>
@@ -53,9 +53,9 @@ export function AppSidebar() {
                 <SidebarMenuItem key={app.to}>
                   <SidebarMenuButton
                     asChild
-                    isActive={Boolean(matchRoute({ to: app.to, fuzzy: true }))}
+                    isActive={Boolean(matchRoute({ to: app.to, fuzzy: app.fuzzy }))}
                     tooltip={app.label}
-                    className="data-active:[&>svg]:text-primary"
+                    className="data-active:bg-white data-active:shadow-[0_4px_14px_-6px_rgb(43_39_48/0.25)] data-active:[&>svg]:text-primary"
                   >
                     <Link to={app.to} onClick={closeOnPhone}>
                       <app.icon aria-hidden="true" />
