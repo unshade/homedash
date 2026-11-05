@@ -7,7 +7,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A new push cancels the previous run of a pull request, but never a run on
+  # main: it could be in the middle of a release.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -17,6 +19,30 @@ env:
   TASK: go tool -modfile=tools/go.mod task
 
 jobs:
+  commits:
+    name: Commit messages
+    # Releases are computed from commit messages (ADR 20), so pull requests
+    # must use Conventional Commits.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: tools/release/package-lock.json
+      - name: Conventional Commits
+        run: $TASK commitlint FROM=${{ github.event.pull_request.base.sha }}
+
   checks:
     name: Pre-checks
     runs-on: ubuntu-latest
@@ -183,3 +209,62 @@ jobs:
             .coverage/coverage.out
             .coverage/coverage.xml
           include-hidden-files: true
+
+  release:
+    name: Release
+    # Only main, and only once everything above passed.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [checks, web, unit, integration, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # tag, GitHub release, CHANGELOG.md commit
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # every commit and tag since the last release
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: tools/release/package-lock.json
+      - name: Release
+        id: release
+        run: $TASK release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish image
+    needs: release
+    # Only when the release job made a new version.
+    if: needs.release.outputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push to ghcr.io
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: v${{ needs.release.outputs.version }}
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push (amd64 + arm64)
+        run: $TASK docker:push VERSION=${{ needs.release.outputs.version }}
