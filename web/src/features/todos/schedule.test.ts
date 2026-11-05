@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Todo } from '@/api/client'
 
-import { dueLabel, groupOpenTodos, summarize, weekProgress } from './schedule'
+import { dueLabel, groupOpenTodos, summarize, upNext, weekDays, weekProgress } from './schedule'
 
 const now = new Date(2026, 10, 4, 15, 30) // Wednesday 4 November 2026, 15:30
 
@@ -102,5 +102,32 @@ describe('weekProgress', () => {
 
   it('is empty when nothing is due this week', () => {
     expect(weekProgress([todo(1), todo(2, day(20))], now)).toEqual({ total: 0, done: 0 })
+  })
+})
+
+describe('weekDays', () => {
+  it('counts the todos due and done on each day from Monday to Sunday', () => {
+    // Monday is day(-2), Sunday day(4).
+    const days = weekDays([todo(1, day(-2)), todo(2, day(0), true), todo(3, day(0)), todo(4, day(4))], now)
+
+    expect(days.map((d) => d.label)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    expect(days.map((d) => d.due)).toEqual([1, 0, 2, 0, 0, 0, 1])
+    expect(days.map((d) => d.done)).toEqual([0, 0, 1, 0, 0, 0, 0])
+    expect(days.map((d) => d.today)).toEqual([false, false, true, false, false, false, false])
+  })
+
+  it('leaves out todos due outside this week or with no due date', () => {
+    const days = weekDays([todo(1, day(-3)), todo(2, day(5)), todo(3)], now)
+
+    expect(days.every((d) => d.due === 0)).toBe(true)
+  })
+})
+
+describe('upNext', () => {
+  it('lists open todos soonest first, undated ones last, up to the limit', () => {
+    const todos = [todo(1), todo(2, day(3)), todo(3, day(-1)), todo(4, day(0), true), todo(5, day(1))]
+
+    expect(upNext(todos, 3).map((t) => t.id)).toEqual([3, 5, 2])
+    expect(upNext(todos, 10).map((t) => t.id)).toEqual([3, 5, 2, 1])
   })
 })

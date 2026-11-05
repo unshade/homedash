@@ -4,7 +4,7 @@ Date: 2026-11-01
 
 ## Status
 
-Accepted. Colour rules amended by [ADR 17](0017-give-homedash-a-brand-colour-and-purposeful-motion.md).
+Superseded by [ADR 22](0022-restyle-homedash-as-a-calm-glass-dashboard.md). Colour rules were amended by [ADR 17](0017-give-homedash-a-brand-colour-and-purposeful-motion.md).
 
 ## Context
 

@@ -44,8 +44,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#f4f3f1',
-        theme_color: '#f4f3f1',
+        background_color: '#f1f0f2',
+        theme_color: '#f1f0f2',
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],

@@ -4,6 +4,7 @@ import { ViewTransition, useDeferredValue, useState } from 'react'
 
 import type { Todo } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import { GlassPanel } from '@/components/glass-panel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -29,7 +30,7 @@ function TitleRow({ summary, week }: { summary?: Summary; week?: WeekProgress })
     <div className="mb-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Todos</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Todos</h1>
           {summary ? <Finding summary={summary} /> : <Skeleton className="mt-1.5 h-4 w-48" />}
         </div>
         <CreateTodoDialog />
@@ -47,9 +48,9 @@ function WeekBar({ week }: { week: WeekProgress }) {
       <span className="text-muted-foreground">This week</span>
       {/* The native element for assistive tech; the bar beside it is what eyes see. */}
       <progress className="sr-only" aria-label="Todos due this week that are done" value={done} max={total} />
-      <div aria-hidden="true" className="h-1.5 w-32 overflow-hidden rounded-full bg-primary/15 sm:w-48">
+      <div aria-hidden="true" className="h-2 w-32 overflow-hidden rounded-full bg-muted sm:w-56">
         <div
-          className="h-full origin-left rounded-full bg-primary transition-transform duration-250 ease-(--ease-out) motion-reduce:transition-none"
+          className="bg-brand glow h-full origin-left rounded-full transition-transform duration-250 ease-(--ease-out) motion-reduce:transition-none"
           style={{ transform: `scaleX(${done / total})` }}
         />
       </div>
@@ -60,13 +61,13 @@ function WeekBar({ week }: { week: WeekProgress }) {
   )
 }
 
-/** Each due group gets a soft band: red for overdue, the brand green for today. */
+/** Each due group gets a soft band: rose for overdue, the orb wash for today. */
 const bandStyles: Record<DueGroupKey, string> = {
-  overdue: 'bg-negative/8 text-negative',
-  today: 'bg-primary/8 text-primary',
-  soon: 'bg-muted/50 text-muted-foreground',
-  later: 'bg-muted/50 text-muted-foreground',
-  none: 'bg-muted/50 text-muted-foreground',
+  overdue: 'bg-negative/6 text-negative',
+  today: 'bg-brand-soft text-data',
+  soon: 'bg-muted text-muted-foreground',
+  later: 'bg-muted text-muted-foreground',
+  none: 'bg-muted text-muted-foreground',
 }
 
 /**
@@ -104,18 +105,22 @@ function Finding({ summary }: { summary: Summary }) {
   )
 }
 
+/** A panel of todos: glass, with its count as a chip. */
 function Panel({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
-  const id = `panel-${title.toLowerCase().replaceAll(' ', '-')}`
   return (
-    <section aria-labelledby={id} className="rounded-lg border bg-card">
-      <div className="flex items-baseline justify-between gap-4 border-b px-4 py-3">
-        <h2 id={id} className="text-base font-medium">
-          {title}
-        </h2>
-        {count !== undefined ? <span className="text-sm text-muted-foreground tabular-nums">{count}</span> : null}
-      </div>
-      {children}
-    </section>
+    <GlassPanel
+      title={title}
+      action={
+        count === undefined ? null : (
+          <span className="chip rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums">
+            {count}
+          </span>
+        )
+      }
+      className="overflow-hidden"
+    >
+      <div className="border-t border-rule">{children}</div>
+    </GlassPanel>
   )
 }
 
@@ -130,7 +135,7 @@ function DoneList({ todos, now }: { todos: Todo[]; now: Date }) {
         ))}
       </ul>
       {todos.length > doneShown ? (
-        <div className="border-t px-4 py-2">
+        <div className="border-t border-rule px-4 py-2">
           <Button variant="link" size="sm" className="px-0 text-foreground" onClick={() => setShowAll((all) => !all)}>
             {showAll ? 'Show fewer' : `Show all ${todos.length} done`}
           </Button>
@@ -153,12 +158,12 @@ export function TodosPage() {
   const done = todos.filter((t) => t.done).toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <TitleRow summary={summary} week={week} />
       <div className="space-y-4">
         <Panel title="To do" count={summary.open}>
           {groups.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted-foreground">
+            <p className="px-5 py-6 text-sm text-muted-foreground">
               {todos.length === 0
                 ? 'Nothing here yet. Add the first thing to do at home with New todo.'
                 : 'Everything is done.'}
@@ -168,7 +173,7 @@ export function TodosPage() {
               <div key={group.key}>
                 <div
                   className={cn(
-                    'flex items-center justify-between px-4 py-1.5 text-xs font-medium',
+                    'flex items-center justify-between px-5 py-1.5 text-xs font-medium',
                     bandStyles[group.key],
                   )}
                 >
@@ -190,14 +195,14 @@ export function TodosPage() {
           </Panel>
         ) : null}
       </div>
-    </>
+    </div>
   )
 }
 
 /** The final layout with grey bars in place of the values, so nothing shifts when data lands. */
 export function TodosPageSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading todos">
+    <div aria-busy="true" aria-label="Loading todos" className="mx-auto max-w-3xl">
       <TitleRow />
       <Panel title="To do">
         <ul>
@@ -218,7 +223,7 @@ export function TodosPageSkeleton() {
 export function TodosPageError({ error }: ErrorComponentProps) {
   const router = useRouter()
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <TitleRow />
       <Panel title="To do">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4">
@@ -231,6 +236,6 @@ export function TodosPageError({ error }: ErrorComponentProps) {
           </Button>
         </div>
       </Panel>
-    </>
+    </div>
   )
 }

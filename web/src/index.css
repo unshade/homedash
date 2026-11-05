@@ -1,14 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
 
-/* Follow the system theme: no class toggling script, which the CSP would block. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* homedash is light only (ADR 22): calm frosted glass on a pale ground. The
+   `dark:` variants of the shadcn components never apply (no `.dark` anywhere). */
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -19,6 +23,9 @@
     --color-sidebar: var(--sidebar);
     --color-chart-5: var(--chart-5);
     --color-data: var(--data);
+    --color-positive: var(--positive);
+    --color-glow: var(--glow);
+    --color-lavender: var(--lavender);
     --color-rule: var(--rule);
     --color-negative: var(--negative);
     --color-chart-4: var(--chart-4);
@@ -53,78 +60,125 @@
 }
 
 :root {
-    /* homedash's look (ADR 17): a warm stone ground under white panels, and one
-       brand colour, a garden green, on the main action, checks, "today" and progress.
-       Red is kept for what is overdue. */
-    --background: #f4f3f1;
-    --foreground: #0a0a0a;
-    --card: #ffffff;
-    --card-foreground: #0a0a0a;
-    --popover: #ffffff;
-    --popover-foreground: #0a0a0a;
-    --primary: #2f6b4b;
+    color-scheme: light;
+    /* homedash's look (ADR 22): calm and cosy. A pale ground washed with peach
+       and lavender light, frosted white glass cards with bright rims, ink text,
+       and a coral "orb" accent (coral → pink → lavender) used sparingly. */
+    --background: #f1f0f2;
+    --foreground: #2b2730;
+    /* Panels are glass (the `glass` utility below); --card is its solid fallback. */
+    --card: #fbfafb;
+    --card-foreground: #2b2730;
+    /* Menus, dialogs and toasts float above glass: almost opaque white. */
+    --popover: rgb(255 255 255 / 0.86);
+    --popover-foreground: #2b2730;
+    /* Coral: icons, checks, focus, small marks. Too light for text: text uses --data. */
+    --primary: #ef6a3c;
     --primary-foreground: #ffffff;
-    --secondary: #eeeeee;
-    --secondary-foreground: #0a0a0a;
-    --muted: #eeeeee;
-    --muted-foreground: #6b6b6b;
-    --accent: #f0efed;
-    --accent-foreground: #0a0a0a;
-    --destructive: #c4242a;
-    --border: #e6e6e6;
-    /* Row rules inside panels, one step lighter than the borders. */
-    --rule: #f0f0f0;
-    --input: #d4d4d4;
-    --ring: #2f6b4b;
-    /* "Today" uses the brand colour; red only signals what is overdue. */
-    --data: var(--primary);
-    --negative: #c4242a;
-    --chart-1: #141414;
-    --chart-2: #8a8a8a;
-    --chart-3: #1d5fbf;
-    --chart-4: #6b6b6b;
-    --chart-5: #d4d4d4;
-    --radius: 0.5rem;
-    /* The sidebar is a white panel on the stone ground, built from the tokens
-       above so light and dark follow them. */
-    --sidebar: var(--card);
+    --secondary: rgb(255 255 255 / 0.7);
+    --secondary-foreground: #2b2730;
+    /* Sunken things inside glass: tracks, neutral bands, skeletons. */
+    --muted: rgb(43 39 48 / 0.035);
+    --muted-foreground: #66606f;
+    /* Hover and the current item: a brighter white. */
+    --accent: rgb(255 255 255 / 0.65);
+    --accent-foreground: #2b2730;
+    --destructive: #be123c;
+    --border: rgb(43 39 48 / 0.08);
+    /* Row rules inside panels, fainter than the borders. */
+    --rule: rgb(43 39 48 / 0.06);
+    --input: rgb(43 39 48 / 0.14);
+    --ring: #ef6a3c;
+    /* "Today" in deep coral, overdue in deep rose, done in deep green: dark
+       enough to read as text on white glass. */
+    --data: #a8360b;
+    --negative: #be123c;
+    --positive: #036a4c;
+    /* The orb gradient: coral → pink → lavender, as in the artwork of the
+       references. Fills and marks only, never behind text. */
+    --brand-from: #ff9466;
+    --brand-via: #f6679a;
+    --brand-to: #b794f6;
+    --brand-gradient: linear-gradient(135deg, var(--brand-from), var(--brand-via) 55%, var(--brand-to));
+    --glow: rgb(246 103 154 / 0.35);
+    --lavender: #c9b6f7;
+    --chart-1: #f6679a;
+    --chart-2: #b794f6;
+    --chart-3: #ff9466;
+    --chart-4: #7cc6a4;
+    --chart-5: #8ec5f2;
+    --radius: 0.875rem;
+    --sidebar: rgb(255 255 255 / 0.45);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: var(--muted);
+    --sidebar-accent: rgb(255 255 255 / 0.6);
     --sidebar-accent-foreground: var(--foreground);
     --sidebar-border: var(--border);
     --sidebar-ring: var(--ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-      --data: var(--primary);
-      --rule: oklch(1 0 0 / 6%);
-      --negative: #e5566f;
-      --background: oklch(0.145 0 0);
-      --foreground: oklch(0.985 0 0);
-      --card: oklch(0.205 0 0);
-      --card-foreground: oklch(0.985 0 0);
-      --popover: oklch(0.205 0 0);
-      --popover-foreground: oklch(0.985 0 0);
-      --primary: #6fcf97;
-      --primary-foreground: #0b2116;
-      --secondary: oklch(0.269 0 0);
-      --secondary-foreground: oklch(0.985 0 0);
-      --muted: oklch(0.269 0 0);
-      --muted-foreground: oklch(0.708 0 0);
-      --accent: oklch(0.269 0 0);
-      --accent-foreground: oklch(0.985 0 0);
-      --destructive: oklch(0.704 0.191 22.216);
-      --border: oklch(1 0 0 / 10%);
-      --input: oklch(1 0 0 / 15%);
-      --ring: #6fcf97;
-      --chart-1: oklch(0.87 0 0);
-      --chart-2: oklch(0.556 0 0);
-      --chart-3: oklch(0.439 0 0);
-      --chart-4: oklch(0.371 0 0);
-      --chart-5: oklch(0.269 0 0);
+/* ----------------------------------------------------------------------------
+   Glass (ADR 22). Frosted white: the pastel ground shows through, blurred, and
+   a bright rim outlines the card. `glass` for panels and the sidebar,
+   `glass-strong` for what floats above them (dialogs, menus). Never stack
+   blur inside blur: rows inside a panel stay plain.
+   ---------------------------------------------------------------------------- */
+@utility glass {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.4));
+  border: 1.5px solid rgb(255 255 255 / 0.85);
+  box-shadow:
+    0 1px 2px rgb(43 39 48 / 0.04),
+    0 12px 32px -12px rgb(60 40 90 / 0.14);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+}
+
+@utility glass-strong {
+  background: var(--popover);
+  border: 1.5px solid rgb(255 255 255 / 0.95);
+  box-shadow:
+    0 2px 4px rgb(43 39 48 / 0.04),
+    0 24px 56px -16px rgb(60 40 90 / 0.25);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+}
+
+/* The orb gradient as a fill (checks, bars, progress) and its soft halo. */
+@utility bg-brand {
+  background-image: var(--brand-gradient);
+}
+
+/* A faint wash of the orb gradient: highlighted bands. */
+@utility bg-brand-soft {
+  background-image: linear-gradient(90deg, rgb(255 148 102 / 0.14), rgb(183 148 246 / 0.08));
+}
+
+@utility glow {
+  box-shadow: 0 6px 20px -6px var(--glow);
+}
+
+/* A small white pill: counts, dates, secondary chips. */
+@utility chip {
+  background: rgb(255 255 255 / 0.75);
+  box-shadow: 0 0 0 1px rgb(43 39 48 / 0.06);
+  color: var(--muted-foreground);
+}
+
+/* People who ask for less transparency, and browsers without backdrop-filter,
+   get solid panels with the same rims. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-strong {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong {
+    background: var(--card);
   }
 }
 
@@ -150,9 +204,53 @@
     user-select: none;
   }
 }
+
 /* ----------------------------------------------------------------------------
-   Motion (ADR 17). Purposeful and short: feedback on a check, a todo moving to
-   where it now belongs, a new todo arriving. transform and opacity only.
+   The ground (components/backdrop.tsx): still, soft light behind everything.
+   Peach rising from the bottom left, lavender from the bottom right, a blush
+   at the top. Gradients only, no filter, and no movement: calm.
+   ---------------------------------------------------------------------------- */
+.backdrop-wash {
+  background:
+    radial-gradient(55rem 38rem at 0% 105%, rgb(255 170 140 / 0.55), transparent 65%),
+    radial-gradient(55rem 40rem at 100% 105%, rgb(190 160 250 / 0.55), transparent 65%),
+    radial-gradient(45rem 26rem at 70% -10%, rgb(255 205 225 / 0.35), transparent 65%);
+}
+
+/* Soft artwork for the home tiles, after the blurred pastel images of the
+   references: layered gradients, no image files. */
+.art-peach {
+  background:
+    radial-gradient(70% 90% at 15% 20%, #ffc4ae, transparent 70%),
+    radial-gradient(70% 90% at 85% 30%, #ff9fb8, transparent 70%),
+    radial-gradient(90% 80% at 50% 100%, #fff1ea, transparent 70%),
+    #ffd9cc;
+}
+.art-coral {
+  background:
+    radial-gradient(70% 90% at 20% 25%, #ffb38f, transparent 70%),
+    radial-gradient(70% 90% at 80% 20%, #e4c9ff, transparent 70%),
+    radial-gradient(90% 80% at 50% 100%, #fff4ec, transparent 70%),
+    #f7d6e6;
+}
+.art-mint {
+  background:
+    radial-gradient(70% 90% at 20% 30%, #bfe8cf, transparent 70%),
+    radial-gradient(70% 90% at 80% 20%, #ffe2b8, transparent 70%),
+    radial-gradient(90% 80% at 50% 100%, #f2fbf5, transparent 70%),
+    #dcefe3;
+}
+.art-lavender {
+  background:
+    radial-gradient(70% 90% at 20% 20%, #cdbdfd, transparent 70%),
+    radial-gradient(70% 90% at 80% 30%, #b3dcff, transparent 70%),
+    radial-gradient(90% 80% at 50% 100%, #f6f1ff, transparent 70%),
+    #e3dbfb;
+}
+
+/* ----------------------------------------------------------------------------
+   Motion (ADR 17, ADR 22). Purposeful and short: feedback on a check, a todo
+   moving to where it now belongs, things arriving. transform and opacity only.
    ---------------------------------------------------------------------------- */
 :root {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -222,5 +320,58 @@
     --tw-exit-translate-x: 0;
     --tw-enter-translate-y: 0;
     --tw-exit-translate-y: 0;
+  }
+}
+
+/* Things arriving on the home page: cards rise in, one after the other
+   (--i is the card's index), bars grow and the ring fills. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.rise-in {
+  animation: rise-in 350ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+@keyframes grow-up {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.grow-up {
+  transform-origin: bottom;
+  animation: grow-up 500ms var(--ease-out) both;
+  animation-delay: calc(150ms + var(--i, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation-name: todo-fade-in;
+  }
+  .grow-up {
+    animation: none;
+  }
+}
+
+/* The home ring fills up from empty on arrival. A tiny SVG stroke, so
+   animating stroke-dashoffset is cheap. */
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+
+.ring-fill {
+  animation: ring-fill 900ms var(--ease-out) 200ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-fill {
+    animation: none;
   }
 }
