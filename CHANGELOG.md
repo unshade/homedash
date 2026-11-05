@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/unshade/homedash/compare/v1.0.0...v1.1.0) (2026-11-05)
+
+### Features
+
+* add a home overview ([49b5ae2](https://github.com/unshade/homedash/commit/49b5ae2ab006f8c33e1611b93e7824c9a198b3dd))
+* restyle the app as a calm glass dashboard ([6ad6fdc](https://github.com/unshade/homedash/commit/6ad6fdcb2fe4a86b58656a30fbbd79511078879e))
+
 ## 1.0.0 (2026-11-05)
 
 ### Features
